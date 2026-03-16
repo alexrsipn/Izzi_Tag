@@ -1,0 +1,76 @@
+<ng-container *ngIf="vm$ | async as vm">
+  <div>
+    <h3 style="text-align: center; padding: 0.5rem 0">Orden de trabajo: <b>{{vm.apptNumber}}</b></h3>
+    <ng-container *ngIf="!vm.onlyFinishButtonVisibility; else finish">
+      <mat-stepper [orientation]="(stepperOrientation | async)!" [linear]="true">
+        <mat-step *ngIf="vm.clientSignVisibilitySettings" [stepControl]="firstFormGroup" label="Firma">
+          <div>
+            <!--<app-canvas [techResult]="vm.technicianSignatureResult" [clientResult]="vm.clientSignatureResult?.text"></app-canvas>-->
+            <app-canvas [clientResult]="vm.clientSignatureResult?.text"></app-canvas>
+          </div>
+          <div style="display: flex; justify-content: space-around; align-items: center; width: 100%; padding: 1rem 0" class="center">
+            <button mat-raised-button color="accent" (click)="clearSignatures()" *ngIf="canClearSignatures">
+              Reiniciar
+            </button>
+            <button mat-raised-button color="primary" (click)="processDrawnSignatures()" *ngIf="canValidateSignatures && !vm.clientSignatureResult?.result && !vm.technicianSignatureResult?.result">
+              Validar
+            </button>
+          </div>
+        </mat-step>
+        <mat-step [stepControl]="secondFormGroup" label="Encuesta">
+          <form [formGroup]="secondFormGroup" style="display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 0.5rem">
+            <div *ngIf="vm.masterFlag==='Y'">
+              <mat-form-field>
+                <mat-label>¿Está conforme con el servicio?</mat-label>
+                <mat-select formControlName="serviceConformityCtrl">
+                  <mat-option value="Fallido_cerrado">Fallido Cerrado</mat-option>
+                  <mat-option value="OKCliente_cerrado">OK Cliente Cerrado</mat-option>
+                  <!--<mat-option value="PorTiempo">Por Tiempo</mat-option>-->
+                </mat-select>
+              </mat-form-field>
+              <mat-error *ngIf="serviceConformityCtrlHasError && secondFormGroup.get('serviceConformityCtrl')?.touched">
+                Este campo es requerido
+              </mat-error>
+            </div>
+            <div *ngIf="vm.tcSectionVisibilitySettings">
+              <mat-label>¿El trabajo realizado fue de tu entera satisfacción?</mat-label>
+              <mat-radio-group formControlName="satisfactionCtrl" aria-label="Selecciona una opción" style="display: flex; justify-content: space-around; align-items: center; width: 100%">
+                <mat-radio-button value="Y">Si</mat-radio-button>
+                <mat-radio-button value="N">No</mat-radio-button>
+              </mat-radio-group>
+              <mat-error *ngIf="satisfactionCtrlHasError && secondFormGroup.get('satisfactionCtrl')?.touched">
+                Debes seleccionar una opción
+              </mat-error>
+              <div *ngIf="secondFormGroup.get('satisfactionCtrl')?.value === 'Y'">
+                <mat-label>Selecciona los servicios comprobados:</mat-label>
+                <mat-selection-list formControlName="checkedServicesCtrl" multiple>
+                  <mat-list-option value="Internet" *ngIf="vm.masterFlag!=='Y'">Internet</mat-list-option>
+                  <mat-list-option value="Television">Televisión</mat-list-option>
+                  <mat-list-option value="Telefonia" *ngIf="vm.masterFlag!=='Y'">Telefonía</mat-list-option>
+                </mat-selection-list>
+                <mat-error *ngIf="checkedServicesCtrlHasError && secondFormGroup.get('checkedServicesCtrl')?.touched">
+                  Debes seleccionar al menos un servicio
+                </mat-error>
+              </div>
+            </div>
+            <div *ngIf="vm.othersVisibilitySettings">
+              <mat-label>Otros: </mat-label>
+              <textarea formControlName="othersCtrl" rows="5" cols="50" style="resize: none; width: 100%; border-radius: 0.25rem"></textarea>
+              <mat-error *ngIf="otherCtrlHasError && secondFormGroup.get('othersCtrl')?.touched">
+                Este campo es requerido
+              </mat-error>
+            </div>
+          </form>
+          <div style="display: flex; justify-content: center; align-items: center; width: 100%; padding: 1rem 0">
+            <button mat-raised-button color="primary" (click)="submit()" [disabled]="!secondFormGroup.valid || vm.provisioningValidation!=='OK'">Finalizar</button>
+          </div>
+        </mat-step>
+      </mat-stepper>
+    </ng-container>
+    <ng-template #finish>
+      <div style="display: flex; justify-content: center; align-items: center; width: 100%; padding: 1rem 0">
+        <button mat-raised-button color="primary" (click)="submit()" [disabled]="vm.provisioningValidation!=='OK'">Finalizar</button>
+      </div>
+    </ng-template>
+  </div>
+</ng-container>

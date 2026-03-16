@@ -1,0 +1,28 @@
+<div style="display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 0.25rem;">
+    <div style="display: flex; justify-content: center; align-items: center; flex-direction: column">
+      <mat-card appearance="raised">
+        <mat-card-header>
+          <mat-card-subtitle>Firma del Cliente</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content style="display: flex; justify-content: center; align-items: center;">
+          <canvas #clientSignatureCanvas style="border: 1px solid black; border-radius: 0.25rem; margin: 0 1rem; width: 100%; touch-action: none"></canvas>
+        </mat-card-content>
+        <mat-card-footer style="text-align: center; padding: 0.25rem 0" *ngIf="clientResult">
+          <p>Resultado: <b style="color: red">{{ clientResult }}</b></p>
+        </mat-card-footer>
+      </mat-card>
+    </div>
+<!--    <div style="display: flex; justify-content: center; align-items: center; flex-direction: column">
+      <mat-card appearance="raised">
+        <mat-card-header>
+          <mat-card-subtitle>Firma del Técnico</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content style="display: flex; justify-content: center; align-items: center;">
+          <canvas #techSignatureCanvas style="border: 1px solid black; border-radius: 0.25rem; margin: 0 1rem; width: 100%; touch-action: none"></canvas>
+        </mat-card-content>
+        <mat-card-footer style="text-align: center; padding: 0.25rem 0" *ngIf="techResult">
+          <p>Resultado: {{ techResult.text }}</p>
+        </mat-card-footer>
+      </mat-card>
+    </div>-->
+</div>
