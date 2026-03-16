@@ -12,7 +12,7 @@ import {
   XmlParserService,
 } from './app/services/xml-parser-service.service';
 import { AppConfig } from './app/services/app-config.service';
-import { APP_INITIALIZER, importProvidersFrom } from '@angular/core';
+import { importProvidersFrom, inject, provideAppInitializer } from '@angular/core';
 
 export function initializeAppConfig(appConfig: AppConfig) {
   return () => appConfig.loadComplexityCatalog();
@@ -25,12 +25,10 @@ bootstrapApplication(AppComponent, {
     provideHttpClient(withInterceptors([loadingInterceptor])),
     { provide: XmlParserService, useClass: FastXmlParserService },
     AppConfig,
-    {
-      provide: APP_INITIALIZER,
-      useFactory: initializeAppConfig,
-      deps: [AppConfig],
-      multi: true
-    },
+    provideAppInitializer(() => {
+        const initializerFn = (initializeAppConfig)(inject(AppConfig));
+        return initializerFn();
+      }),
     importProvidersFrom([BrowserAnimationsModule, MatDialogModule]),
   ],
 });

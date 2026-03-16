@@ -16,10 +16,9 @@ import { MatDividerModule } from "@angular/material/divider";
 import { MatRadioModule } from "@angular/material/radio";
 
 @Component({
-  selector: 'app-complete',
-  standalone: true,
-  imports: [CommonModule, MatButtonModule, MatSlideToggleModule, CanvasComponent, MatStepperModule, MatFormFieldModule, FormsModule, ReactiveFormsModule, MatInputModule, MatSelectModule, MatListModule, MatDividerModule, MatRadioModule],
-  templateUrl: './complete.component.html',
+    selector: 'app-complete',
+    imports: [CommonModule, MatButtonModule, MatSlideToggleModule, CanvasComponent, MatStepperModule, MatFormFieldModule, FormsModule, ReactiveFormsModule, MatInputModule, MatSelectModule, MatListModule, MatDividerModule, MatRadioModule],
+    templateUrl: './complete.component.html'
 })
 export class CompleteComponent implements OnInit, OnDestroy{
   @ViewChild(CanvasComponent) canvasComponent!: CanvasComponent;

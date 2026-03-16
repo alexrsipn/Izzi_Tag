@@ -4,16 +4,15 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { SpinnerService } from '../../services/spinner.service';
 
 @Component({
-  selector: 'app-spinner',
-  standalone: true,
-  imports: [CommonModule, MatProgressSpinnerModule],
-  template: `
+    selector: 'app-spinner',
+    imports: [CommonModule, MatProgressSpinnerModule],
+    template: `
     <div class="loader" *ngIf="loading$ | async">
       <mat-spinner></mat-spinner>
     </div>
   `,
-  styles: [
-    `
+    styles: [
+        `
       .loader {
         position: fixed;
         width: 100%;
@@ -27,7 +26,7 @@ import { SpinnerService } from '../../services/spinner.service';
         align-items: center;
       }
     `,
-  ],
+    ]
 })
 export class SpinnerComponent {
   loading$ = this.loading.isLoading();

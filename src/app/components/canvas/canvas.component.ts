@@ -3,10 +3,9 @@ import { MatCardModule } from "@angular/material/card";
 import { NgIf } from "@angular/common";
 
 @Component({
-  selector: 'app-canvas',
-  standalone: true,
-  imports: [MatCardModule, NgIf],
-  templateUrl: './canvas.component.html',
+    selector: 'app-canvas',
+    imports: [MatCardModule, NgIf],
+    templateUrl: './canvas.component.html'
 })
 export class CanvasComponent implements AfterViewInit, OnDestroy {
   /*@Input() techResult?: {text: string, result: boolean} = {text: '', result: false}*/

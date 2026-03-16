@@ -5,13 +5,12 @@ import { Store } from './plugin.store';
 import { SpinnerComponent } from './shared/spinner/spinner.component';
 
 @Component({
-  selector: 'app-root',
-  template: `
+    selector: 'app-root',
+    template: `
     <router-outlet></router-outlet>
     <app-spinner></app-spinner>
   `,
-  standalone: true,
-  imports: [RouterModule, SpinnerComponent],
+    imports: [RouterModule, SpinnerComponent]
 })
 export class AppComponent {
   constructor(
