@@ -1,5 +1,5 @@
 import { Injectable, isDevMode } from '@angular/core';
-import { filter, fromEvent, map, Observable, share, Subject, tap } from 'rxjs';
+import { filter, fromEvent, map, Observable, ReplaySubject, share, Subject, tap } from 'rxjs';
 import { Message } from '../types/models/message';
 
 @Injectable({
@@ -10,36 +10,37 @@ export class OfsMessageService {
 
   message: Message | any;
   messageSubject = new Subject<Message>();
+  
+  // Usamos ReplaySubject para que si el mensaje llega antes de que el Store se suscriba,
+  // este lo reciba igualmente al momento de suscribirse.
+  private _rawMessages$ = new ReplaySubject<Message>(10);
 
   constructor() {
     fromEvent(window, 'message').subscribe((event: any) => {
       this.getPostMessageData(event);
     });
-    this.sendOKMessage();
   }
 
   // Input Messages
-  private message$ = fromEvent(window, 'message').pipe(
-    tap((e) => this.logEvent(e as MessageEvent)),
-    filter((e) => (e as MessageEvent).data),
-    map((e) => (e as MessageEvent<Message>).data),
-    share()
-  );
+  private message$ = this._rawMessages$.asObservable();
 
   readonly initMessage$ = this.message$.pipe(
-    filter((m) => m.method === 'init')
+    filter((m) => m && m.method === 'init')
   );
   readonly openMessage$ = this.message$.pipe(
-    filter((m) => m.method === 'open')
+    filter((m) => m && m.method === 'open')
   );
   readonly wakeupMessage$ = this.message$.pipe(
-    filter((m) => m.method === 'wakeup')
+    filter((m) => m && m.method === 'wakeup')
   );
   readonly updateResultMessage$ = this.message$.pipe(
-    filter((m) => m.method === 'updateResult')
+    filter((m) => m && m.method === 'updateResult')
+  );
+  readonly callProcedureResultMessage$ = this.message$.pipe(
+    filter((m) => m && m.method === 'callProcedureResult')
   );
   readonly errorMessage$ = this.message$.pipe(
-    filter((m) => m.method === 'error')
+    filter((m) => m && m.method === 'error')
   );
 
   // Output Messages
@@ -47,16 +48,16 @@ export class OfsMessageService {
     const message: Partial<Message> = {
       apiVersion: OfsMessageService.API_VERSION,
       method: 'ready',
-      sendMessageAsJsObject: true,
       sendInitData,
+      sendMessageAsJsObject: true
     };
     this.sendPostMessageData(message);
   }
 
-  initEnd(additionalData: Partial<Message> = {}): void {
-    const message: Partial<Message> = {
+  initEnd(additionalData: any = {}): void {
+    const message = {
       ...additionalData,
-      apiVersion: OfsMessageService.API_VERSION,
+      apiVersion: 1,
       method: 'initEnd'
     };
     this.sendPostMessageData(message);
@@ -128,19 +129,24 @@ export class OfsMessageService {
   }
 
   getPostMessageData(event: any) {
-    if (typeof event.data !== 'undefined') {
-      if (this.isJson(event.data)) {
-        let data = JSON.parse(event.data);
+    let data = event.data;
+    if (typeof data !== 'undefined') {
+      // Si recibimos un string, intentamos parsearlo. Si no, lo usamos como objeto.
+      if (typeof data === 'string' && this.isJson(data)) {
+        data = JSON.parse(data);
+      }
+
+      if (typeof data === 'object' && data !== null) {
+        this._rawMessages$.next(data as Message);
 
         if (data.method) {
           this.log(
             window.location.host +
             ' <- ' +
-            ' ' +
-            this.getDomain(event.origin) +
+            this.getDomain(event.origin || origin) +
             '\nMethod: ' +
             data.method,
-            JSON.stringify(data, null, 4)
+            data
           );
 
           switch (data.method) {
@@ -184,24 +190,16 @@ export class OfsMessageService {
   }
 
   sendPostMessageData(data: any) {
-    if (document.referrer !== '') {
-      this.log(
-        window.location.host +
-        ' -> ' +
-        this.getDomain(document.referrer) +
-        '\nMethod: ' +
-        data.method +
-        ' ',
-        JSON.stringify(data, null, 1),
-        '#008744',
-        true
-      );
+    const origin = document.referrer ? this.getOrigin(document.referrer) : '*';
+    
+    this.log(
+      window.location.host + ' -> ' + origin + '\nMethod: ' + data.method,
+      data,
+      '#008744',
+      true
+    );
 
-      parent.postMessage(
-        JSON.stringify(data),
-        this.getOrigin(document.referrer)
-      );
-    }
+    parent.postMessage(data, origin);
   }
 
   // OFS actions
@@ -209,6 +207,16 @@ export class OfsMessageService {
     this.messageSubject.next(message);
     this.messageSubject.complete();
     /*console.log(message);*/
+  }
+
+  scanBarcode(id: any){
+    let messageData = {
+      apiVersion: 1,
+      callId: id,
+      method: 'callProcedure',
+      procedure: 'scanBarcode'
+    };
+    this.sendPostMessageData(messageData);
   }
 
   // close() {
@@ -238,14 +246,6 @@ export class OfsMessageService {
       this.log(window.location.host + ' <- NO DATA' + this.getDomain(event.origin), null, null, true);
       return;
     }
-  }
-
-  sendOKMessage() {
-    let messageData = {
-      apiVersion: 1,
-      method: 'ready',
-    };
-    this.sendPostMessageData(messageData);
   }
 
   log(title: string, data?: string | null, color?: string | null, warning?: boolean) {
@@ -304,5 +304,10 @@ export class OfsMessageService {
 
   showError(errorData: any) {
     alert(JSON.stringify(errorData, null, 4));
+  }
+
+  generateCallId(){
+    const buffer = new Uint8Array(16);
+    return btoa(String.fromCharCode.apply(null, window.crypto.getRandomValues(buffer as any)));
   }
 }

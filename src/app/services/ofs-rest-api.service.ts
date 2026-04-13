@@ -1,6 +1,7 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import {GetAnActivityTypeResponse, UpdateAnActivityBodyParams} from "../types/ofs-rest-api";
+import { EMPTY, expand, map, Observable, reduce } from 'rxjs';
+import {GetAnActivityTypeResponse, UpdateAnActivityBodyParams, SearchActivitiesResponse} from "../types/ofs-rest-api";
 
 @Injectable({
   providedIn: 'root'
@@ -88,5 +89,51 @@ export class OfsRestApiService {
     });
     // const params = new HttpParams().set('language', 'es');
     return this.http.get<any>(endpoint, {headers, responseType: 'blob' as 'json'});
+  }
+
+  searchActivities(tag: string): Observable<SearchActivitiesResponse> {
+    const limit = 100;
+    const today = new Date().toLocaleDateString('sv-SE');
+    const headers = new HttpHeaders({
+      Authorization: 'Basic ' + btoa(`${this.credentials.user}:${this.credentials.pass}`),
+      'Content-Type': 'application/json',
+    });
+
+    const getPage = (offset: number) => {
+      const endpoint = `${this.baseUrl}/rest/ofscCore/v1/activities/custom-actions/search?searchInField=XA_TAG&searchForValue=${tag}&dateFrom=${today}&dateTo=3000-01-01&includeNonScheduled=true&fields=activityId,status,date,resourceId,XA_JOBTYPE,activityType,customerName,apptNumber,streetAddress,XA_NEIGHBORHOOD,XA_RPT,city,XA_TAG&limit=${limit}&offset=${offset}`;
+      return this.http.get<SearchActivitiesResponse>(endpoint, { headers }).pipe(
+        map(res => ({ ...res, offset }))
+      );
+    };
+
+    return getPage(0).pipe(
+      expand(res => {
+        const nextOffset = res.offset + limit;
+        return nextOffset < res.totalResults ? getPage(nextOffset) : EMPTY;
+      }),
+      reduce((acc, res) => {
+        acc.items.push(...(res.items || []));
+        acc.totalResults = res.totalResults;
+        return acc;
+      }, { totalResults: 0, items: [] } as SearchActivitiesResponse)
+    );
+  }
+
+  moveActivity(activityId: number, targetResourceId: string) {
+    const today = new Date().toLocaleDateString('sv-SE');
+    const endpoint = `${this.baseUrl}/rest/ofscCore/v1/activities/${activityId}/custom-actions/move`;
+    const headers = new HttpHeaders({
+      Authorization: 'Basic ' + btoa(`${this.credentials.user}:${this.credentials.pass}`),
+      'Content-Type': 'application/json',
+    });
+    const body = {
+      setDate: {
+        date: today
+      },
+      setResource: {
+        resourceId: targetResourceId
+      }
+    };
+    return this.http.post<any>(endpoint, body, { headers });
   }
 }

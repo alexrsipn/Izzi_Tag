@@ -1,0 +1,93 @@
+<ng-container *ngIf="vm$ | async as vm">
+    <!-- Contenedor principal limitado al tamaño de la pantalla -->
+    <section class="flex flex-col items-center w-full h-screen max-h-screen p-4 bg-gray-50 overflow-hidden">
+
+        <div class="w-full max-w-md flex flex-col h-full bg-white border border-cyan-600 rounded shadow-sm overflow-hidden">
+
+            <!-- Cabecera: Buscador o Tag Buscado -->
+            <div class="w-full p-4 border-b border-gray-100 bg-white z-10" *ngIf="!vm.lastSearchedTag">
+                <app-search-bar (search)="handleSearch($event)"></app-search-bar>
+            </div>
+
+            <!-- Área de Contenido: Scrollable -->
+            <div class="flex-1 overflow-y-auto p-4 custom-scrollbar">
+
+                <!-- Vista de Resultados -->
+                <div *ngIf="objectKeys(vm.searchResults).length > 0; else emptyState">
+                    <!--<h4 class="mb-3 text-sm font-medium text-gray-500 italic">OOTT encontradas en OFSC:</h4>-->
+                    <mat-accordion multi="false">
+                        <mat-expansion-panel *ngFor="let type of objectKeys(vm.searchResults);"
+                                             class="mb-2 shadow-none border border-gray-200">
+                            <mat-expansion-panel-header>
+                                <mat-panel-title class="font-bold text-cyan-800 w-full"> {{ type }} </mat-panel-title>
+                                <!--<mat-panel-description> {{ vm.searchResults[type].length }} </mat-panel-description>-->
+                            </mat-expansion-panel-header>
+
+                            <div class="max-h-80 overflow-y-auto pr-2 custom-scrollbar">
+                                <div *ngFor="let act of vm.searchResults[type] | slice:0:vm.visibleItemsLimit[type]" class="py-3 border-b last:border-0">
+                                    <!-- Encabezado OT y Cliente -->
+                                    <div class="flex justify-between items-start mb-1">
+                                        <span class="text-sm font-bold text-cyan-900">OT: {{ act.apptNumber }}</span>
+                                        <span class="text-[10px] text-gray-400 font-mono">RPT: {{ act.XA_RPT }}</span>
+                                    </div>
+                                    <p class="text-xs font-medium text-gray-700 mb-2 italic">Cliente: {{ act.customerName }}</p>
+
+                                    <!-- Bloque de Dirección Destacado -->
+                                    <div class="bg-gray-100 p-2 rounded-md border-l-4 border-cyan-600 mb-3">
+                                        <p class="text-xs font-bold text-gray-900 leading-tight mb-1 uppercase">{{ act.streetAddress }}</p>
+                                        <p class="text-[10px] text-gray-600">{{ act.XA_NEIGHBORHOOD }} | {{ act.city }}</p>
+                                    </div>
+
+                                    <button mat-flat-button color="primary" class="w-full !py-1 !h-8 !text-xs uppercase font-bold tracking-wider" (click)="assign(act.activityId)">Tomar</button>
+                            </div>
+                            </div>
+
+                            <!-- Botón de Paginación Interna -->
+                            <div class="mt-2  py-1 px-4 text-center border-t border-t-gray-400" *ngIf="vm.searchResults[type].length > vm.visibleItemsLimit[type]">
+                                <button class="text-sm text-blue-800" (click)="loadMore(type)">
+                                    Ver más ({{ (vm.visibleItemsLimit[type] > vm.searchResults[type].length ? vm.searchResults[type].length : vm.visibleItemsLimit[type]) }} de {{ vm.searchResults[type].length }})
+                                </button>
+                            </div>
+                        </mat-expansion-panel>
+                    </mat-accordion>
+                </div>
+
+                <!-- Mensaje Inicial o Sin Resultados -->
+                <ng-template #emptyState>
+                    <div *ngIf="!vm.lastSearchedTag; else noResults" class="h-full flex flex-col justify-center items-center text-center px-6">
+                        <p class="text-gray-600 text-sm leading-relaxed">
+                            Escanea el código QR o ingresa el número de TAG manualmente para buscar órdenes de trabajo.
+                        </p>
+                    </div>
+                    <ng-template #noResults>
+                        <div class="h-full flex flex-col justify-center items-center text-center px-6">
+                            <p class="text-gray-600 text-sm leading-relaxed font-semibold">
+                                No se encontraron actividades para el TAG: {{ vm.lastSearchedTag }}
+                            </p>
+                        </div>
+                    </ng-template>
+                </ng-template>
+            </div>
+
+            <!-- Footer del Card: Información de búsqueda (Solo si hay búsqueda activa) -->
+            <div class="w-full p-4 border-t border-gray-100 bg-white" *ngIf="vm.lastSearchedTag">
+                <div class="flex justify-between items-center bg-cyan-50 p-3 rounded-lg border border-cyan-200">
+                    <div class="flex flex-col">
+                        <span class="text-[10px] text-cyan-700 font-semibold uppercase tracking-wider">TAG Buscado</span>
+                        <span class="text-md font-bold text-gray-800">{{ vm.lastSearchedTag }}</span>
+                    </div>
+                    <button (click)="resetSearch()"
+                            class="text-xs bg-white text-cyan-600 border border-cyan-600 px-3 py-2 rounded-md hover:bg-cyan-600 hover:text-white transition-colors font-bold uppercase">
+                        Limpiar
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Botón de Scan (Deshabilitado si hay búsqueda) -->
+        <div class="w-full py-2">
+            <app-scan [disabled]="!!vm.lastSearchedTag" (scanSuccess)="handleSearch($event)"></app-scan>
+        </div>
+    </section>
+</ng-container>

@@ -44,3 +44,24 @@ export interface GetAResourceRouteItem {
   status?: string,
   XA_PROVISIONING_VALIDATION?: string
 }
+
+export interface SearchActivitiesResponse {
+  totalResults: number;
+  items: ActivitySearchItem[];
+}
+
+export interface ActivitySearchItem {
+  activityId: number;
+  status: string;
+  date: string;
+  resourceId: string;
+  XA_JOBTYPE?: string;
+  activityType: string;
+  customerName?: string;
+  apptNumber?: string;
+  XA_TAG?: string;
+  XA_RPT?: string;
+  city?: string;
+  streetAddress?: string;
+  XA_NEIGHBORHOOD?: string;
+}

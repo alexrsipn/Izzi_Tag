@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ComponentStore } from '@ngrx/component-store';
-import { catchError, concatMap, delay, EMPTY, from, map, switchMap, tap, throwError } from 'rxjs';
+import { catchError, concatMap, delay, EMPTY, from, map, switchMap, takeUntil, tap, throwError } from 'rxjs';
 import { OfsMessageService } from './services/ofs-message.service';
 import { Message } from './types/models/message';
 import { OfsRestApiService } from './services/ofs-rest-api.service';
@@ -8,11 +8,18 @@ import { ImageAnalyzerService } from './services/image-analyzer.service';
 import Image from 'image-js';
 import { DialogService } from "./services/dialog.service";
 import { HttpErrorResponse } from "@angular/common/http";
-import { SurveyData } from "./types/plugin-types";
-import {GetAResourceRoute, GetAResourceRouteItem, UpdateAnActivityBodyParams} from "./types/ofs-rest-api";
+import { SurveyData, GroupedActivities } from "./types/plugin-types";
+import {GetAResourceRoute, GetAResourceRouteItem, UpdateAnActivityBodyParams, ActivitySearchItem} from "./types/ofs-rest-api";
+
+// Constantes de negocio para agrupación
+const JOBTYPES_RECOLECCION = ['TC061', 'TC072', 'TC108', 'TC126', 'TC179', 'TC180', 'TC181', 'TC182'];
+const JOBTYPES_RECONEXION = ['TC063', 'TC073'];
+const JOBTYPES_NO_PAGO = ['TC062'];
 
 interface State {
+  currentResourceId?: string;
   activityId?: number | string;
+  lastSearchedTag?: string;
   accountType?: string;
   jobType?: string;
   magicTownFlag?: string;
@@ -34,6 +41,8 @@ interface State {
   othersVisibilitySettings: boolean;
   onlyFinishButtonVisibility: boolean;
   byPassClientSignature: number;
+  searchResults: GroupedActivities;
+  visibleItemsLimit: { [key: string]: number };
 }
 
 const initialState = {
@@ -43,7 +52,9 @@ const initialState = {
   clientSignVisibilitySettings: false,
   othersVisibilitySettings: false,
   onlyFinishButtonVisibility: false,
-  byPassClientSignature: 0
+  byPassClientSignature: 0,
+  searchResults: {},
+  visibleItemsLimit: {}
 };
 
 @Injectable({
@@ -58,7 +69,33 @@ export class Store extends ComponentStore<State> {
   ) {
     super(initialState);
     this.handleOpenMessage(this.ofs.openMessage$);
-    this.ofs.ready();
+
+    // Enviamos ready con sendInitData: true para que OFSC nos envíe el 'init'
+    this.ofs.ready(true);
+
+    // Manejo del handshake inicial para setear el icono
+    this.ofs.initMessage$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(() => {
+      const svgString = '<?xml version="1.0" encoding="UTF-8"?><svg class="prefix__bi prefix__bi-tags-fill" fill="#fff" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path d="M2 2a1 1 0 0 1 1-1h4.59a1 1 0 0 1 .7.3l7 7a1 1 0 0 1 0 1.4l-4.58 4.6a1 1 0 0 1-1.42 0l-7-7A1 1 0 0 1 2 6.58zm3.5 4a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3"/><path d="M1.3 7.8a1 1 0 0 1-.3-.71V2a1 1 0 0 0-1 1v4.59a1 1 0 0 0 .3.7l7 7a1 1 0 0 0 1.4 0l.05-.04z"/></svg>';
+      const iconBlob = new Blob([svgString], { type: 'image/svg+xml' });
+
+      this.ofs.initEnd({
+        iconData: {
+          color: 'default',
+          image: iconBlob
+        }
+      });
+    });
+
+    // Escuchar resultados de procedimientos nativos (como el scanner)
+    this.ofs.callProcedureResultMessage$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe((message: any) => {
+      if (message.procedure === 'scanBarcode' && message.resultData?.text) {
+        this.searchByTag(message.resultData.text);
+      }
+    });
   }
 
   // Selectors
@@ -146,6 +183,44 @@ export class Store extends ComponentStore<State> {
     ...state,
     onlyFinishButtonVisibility
   }));
+  readonly setLastSearchedTag = this.updater((state, lastSearchedTag: string | undefined) => ({
+    ...state,
+    lastSearchedTag
+  }));
+  readonly clearSearch = this.updater((state) => ({
+    ...state,
+    searchResults: {},
+    lastSearchedTag: undefined,
+    visibleItemsLimit: {}
+  }));
+  readonly setSearchResults = this.updater((state, searchResults: GroupedActivities) => ({
+    ...state,
+    searchResults,
+    visibleItemsLimit: Object.keys(searchResults).reduce((acc, key) => ({ ...acc, [key]: 2 }), {})
+  }));
+
+  readonly removeActivityFromResults = this.updater((state, activityId: number) => {
+    const newSearchResults = { ...state.searchResults };
+    Object.keys(newSearchResults).forEach(group => {
+      newSearchResults[group] = newSearchResults[group].filter(item => item.activityId !== activityId);
+      if (newSearchResults[group].length === 0) {
+        delete newSearchResults[group];
+      }
+    });
+    return { ...state, searchResults: newSearchResults };
+  });
+
+  readonly showMoreItems = this.updater((state, group: string) => ({
+    ...state,
+    visibleItemsLimit: {
+      ...state.visibleItemsLimit,
+      [group]: (state.visibleItemsLimit[group] || 2) + 2
+    }
+  }));
+  readonly setCurrentResourceId = this.updater((state, currentResourceId: string) => ({
+    ...state,
+    currentResourceId
+  }));
 
   // Effects
   readonly handleOpenMessage = this.effect<Message>(($) =>
@@ -155,7 +230,11 @@ export class Store extends ComponentStore<State> {
         this.ofsRestApiService.setUrl(urlOFSC);
         this.ofsRestApiService.setCredentials({user: ofscRestClientId, pass: ofscRestSecretId});
       }),
-      concatMap((message) => {
+      tap(message => console.log(message)),
+      tap((message) => {
+        if (message.user) this.setCurrentResourceId(message.user.ulogin);
+      }),
+/*      concatMap((message) => {
         if (message.activity) {
           this.setFromOfsMessage(message);
           const { parametroComplejidad } = message.securedData;
@@ -179,10 +258,10 @@ export class Store extends ComponentStore<State> {
             })
           );
         }
-      }),
-      switchMap(() => this.ofsRestApiService.getAnActivityType(this.get().aworkType!)),
-      tap(({groupLabel}) => this.visibilitySettings(groupLabel!)),
-      tap(() => this.get().provisioningValidation !== "OK" && this.dialog.error('Se debe completar el aprovisionamiento para finalizar la actividad'))
+      }),*/
+      /*switchMap(() => this.ofsRestApiService.getAnActivityType(this.get().aworkType!)),*/
+      /*tap(({groupLabel}) => this.visibilitySettings(groupLabel!)),*/
+      /*tap(() => this.get().provisioningValidation !== "OK" && this.dialog.error('Se debe completar el aprovisionamiento para finalizar la actividad'))*/
     )
   );
   readonly processDrawnClientSignature = this.effect<Blob>((blob$) => blob$.pipe(
@@ -238,6 +317,69 @@ export class Store extends ComponentStore<State> {
       console.log('Error en el proceso de envío de firmas', error);
       return EMPTY;
     }),
+  ));
+
+  readonly triggerNativeScan = this.effect<void>($ => $.pipe(
+    tap(() => {
+      const callId = this.ofs.generateCallId();
+      this.ofs.scanBarcode(callId);
+    })
+  ));
+
+  readonly searchByTag = this.effect<string>((tag$) => tag$.pipe(
+    tap((tag) => {
+      this.setSearchResults({});
+      this.setLastSearchedTag(tag);
+    }),
+    switchMap((tag) => this.ofsRestApiService.searchActivities(tag).pipe(
+      tap((response) => {
+        const today = new Date().toLocaleDateString('sv-SE');
+        const currentResourceId = this.get().currentResourceId;
+
+        const filteredItems = response.items.filter(item => {
+          return !(item.resourceId === currentResourceId && item.date === today);
+        });
+
+        const grouped = filteredItems.reduce((acc: GroupedActivities, item: ActivitySearchItem) => {
+          const jobType = item.XA_JOBTYPE || '';
+          const actType = item.activityType || '';
+
+          let group = '';
+
+          if (JOBTYPES_NO_PAGO.includes(jobType)) {
+            group = 'No pago - Filtro de video';
+          } else if (JOBTYPES_RECOLECCION.includes(jobType) || actType.startsWith('RA')) {
+            group = 'Recolección de acometida';
+          } else if (JOBTYPES_RECONEXION.includes(jobType) || actType.startsWith('RX')) {
+            group = 'Reconexión';
+          } else {
+            return acc;
+          }
+
+          if (!acc[group]) acc[group] = [];
+          acc[group].push(item);
+          return acc;
+        }, {});
+        this.setSearchResults(grouped);
+      }),
+      catchError((error) => {
+        this.dialog.error('Error al buscar actividades por TAG');
+        return EMPTY;
+      })
+    ))
+  ));
+
+  readonly selfAssign = this.effect<number>((activityId$) => activityId$.pipe(
+    concatMap((activityId) => this.ofsRestApiService.moveActivity(activityId, this.get().currentResourceId!).pipe(
+      tap(() => {
+        this.removeActivityFromResults(activityId);
+        this.dialog.success('Actividad autoasignada correctamente');
+      }),
+      catchError((err) => {
+        this.dialog.error('No se pudo autoasignar la actividad: ' + err.message);
+        return EMPTY;
+      })
+    ))
   ));
 
   readonly completeActivity = this.effect<SurveyData>($ => $.pipe(

@@ -1,0 +1,46 @@
+<div class="flex justify-center items-center gap-4 w-full">
+    <button 
+        (click)="toggleScanner()"
+        [disabled]="disabled"
+        [ngClass]="{'opacity-30 grayscale cursor-not-allowed': disabled, 'hover:cursor-pointer hover:scale-105': !disabled}"
+        class="transition-all bg-transparent border-none p-0">
+        <svg width="85" height="85" viewBox="0 0 85 85" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <g clip-path="url(#paint0_angular_6_36_clip_path)" data-figma-skip-parse="true">
+                <g transform="matrix(0 0.0425 -0.0425 0 42.5 42.5)">
+                    <foreignObject x="-1023.53" y="-1023.53" width="2047.06" height="2047.06">
+                        <div xmlns="http://www.w3.org/1999/xhtml"
+                            style="background:conic-gradient(from 90deg,rgba(0, 193, 181, 1) 0deg,rgba(255, 168, 7, 1) 126.346deg,rgba(255, 0, 128, 1) 252deg,rgba(0, 193, 181, 1) 360deg);height:100%;width:100%;opacity:1">
+                        </div>
+                    </foreignObject>
+                </g>
+            </g>
+            <circle cx="42.5" cy="42.5" r="42.5"
+                data-figma-gradient-fill="{&quot;type&quot;:&quot;GRADIENT_ANGULAR&quot;,&quot;stops&quot;:[{&quot;color&quot;:{&quot;r&quot;:1.0,&quot;g&quot;:0.65882354974746704,&quot;b&quot;:0.027450980618596077,&quot;a&quot;:1.0},&quot;position&quot;:0.35096153616905212},{&quot;color&quot;:{&quot;r&quot;:1.0,&quot;g&quot;:0.0,&quot;b&quot;:0.50196081399917603,&quot;a&quot;:1.0},&quot;position&quot;:0.69999998807907104},{&quot;color&quot;:{&quot;r&quot;:0.0,&quot;g&quot;:0.75686275959014893,&quot;b&quot;:0.70980393886566162,&quot;a&quot;:1.0},&quot;position&quot;:1.0}],&quot;stopsVar&quot;:[{&quot;color&quot;:{&quot;r&quot;:1.0,&quot;g&quot;:0.65882354974746704,&quot;b&quot;:0.027450980618596077,&quot;a&quot;:1.0},&quot;position&quot;:0.35096153616905212},{&quot;color&quot;:{&quot;r&quot;:1.0,&quot;g&quot;:0.0,&quot;b&quot;:0.50196081399917603,&quot;a&quot;:1.0},&quot;position&quot;:0.69999998807907104},{&quot;color&quot;:{&quot;r&quot;:0.0,&quot;g&quot;:0.75686275959014893,&quot;b&quot;:0.70980393886566162,&quot;a&quot;:1.0},&quot;position&quot;:1.0}],&quot;transform&quot;:{&quot;m00&quot;:5.2047489514333960e-15,&quot;m01&quot;:-85.0,&quot;m02&quot;:85.0,&quot;m10&quot;:85.0,&quot;m11&quot;:5.2047489514333960e-15,&quot;m12&quot;:-5.2047489514333960e-15},&quot;opacity&quot;:1.0,&quot;blendMode&quot;:&quot;NORMAL&quot;,&quot;visible&quot;:true}" />
+            <circle cx="42.5" cy="42.5" r="37.5" fill="#010101" />
+            <g clip-path="url(#clip0_6_36)">
+                <path d="M21.875 40.2083H40.2083V21.875H21.875V40.2083ZM26.4583 26.4583H35.625V35.625H26.4583V26.4583Z"
+                    fill="white" />
+                <path d="M21.875 63.125H40.2083V44.7917H21.875V63.125ZM26.4583 49.375H35.625V58.5417H26.4583V49.375Z"
+                    fill="white" />
+                <path d="M44.7917 21.875V40.2083H63.125V21.875H44.7917ZM58.5417 35.625H49.375V26.4583H58.5417V35.625Z"
+                    fill="white" />
+                <path d="M63.125 58.5417H58.5417V63.125H63.125V58.5417Z" fill="white" />
+                <path d="M49.375 44.7917H44.7917V49.375H49.375V44.7917Z" fill="white" />
+                <path d="M53.9583 49.375H49.375V53.9583H53.9583V49.375Z" fill="white" />
+                <path d="M49.375 53.9583H44.7917V58.5416H49.375V53.9583Z" fill="white" />
+                <path d="M53.9583 58.5417H49.375V63.125H53.9583V58.5417Z" fill="white" />
+                <path d="M58.5417 53.9583H53.9583V58.5416H58.5417V53.9583Z" fill="white" />
+                <path d="M58.5417 44.7917H53.9583V49.375H58.5417V44.7917Z" fill="white" />
+                <path d="M63.125 49.375H58.5417V53.9583H63.125V49.375Z" fill="white" />
+            </g>
+            <defs>
+                <clipPath id="paint0_angular_6_36_clip_path">
+                    <circle cx="42.5" cy="42.5" r="42.5" />
+                </clipPath>
+                <clipPath id="clip0_6_36">
+                    <rect width="55" height="55" fill="white" transform="translate(15 15)" />
+                </clipPath>
+            </defs>
+        </svg>
+    </button>
+</div>

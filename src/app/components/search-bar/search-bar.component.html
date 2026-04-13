@@ -1,0 +1,13 @@
+<div class="flex justify-center items-center gap-4 w-full">
+    <input 
+        type="text" 
+        [(ngModel)]="tagValue" 
+        (keyup.enter)="onSearch()"
+        placeholder="Ingresa TAG" 
+        class="search-input w-full border border-black rounded py-2 px-1 placeholder:font-extralight placeholder:text-gray-500">
+    <button 
+        (click)="onSearch()"
+        class="bg-blue-600 text-white px-4 py-2 rounded hover:cursor-pointer hover:bg-blue-800">
+        Buscar
+    </button>
+</div>
