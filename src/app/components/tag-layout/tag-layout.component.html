@@ -27,7 +27,7 @@
                                 <div *ngFor="let act of vm.searchResults[type] | slice:0:vm.visibleItemsLimit[type]" class="py-3 border-b last:border-0">
                                     <!-- Encabezado OT y Cliente -->
                                     <div class="flex justify-between items-start mb-1">
-                                        <span class="text-sm font-bold text-cyan-900">OT: {{ act.apptNumber }}</span>
+                                        <span class="text-sm font-bold text-cyan-900">OS: {{ act.apptNumber }}</span>
                                         <span class="text-[10px] text-gray-400 font-mono">RPT: {{ act.XA_RPT }}</span>
                                     </div>
                                     <p class="text-xs font-medium text-gray-700 mb-2 italic">Cliente: {{ act.customerName }}</p>
@@ -38,7 +38,7 @@
                                         <p class="text-[10px] text-gray-600">{{ act.XA_NEIGHBORHOOD }} | {{ act.city }}</p>
                                     </div>
 
-                                    <button mat-flat-button color="primary" class="w-full !py-1 !h-8 !text-xs uppercase font-bold tracking-wider" (click)="assign(act.activityId)">Tomar</button>
+                                    <button mat-flat-button color="primary" class="w-full !py-1 !h-8 !text-xs uppercase font-bold tracking-wider" (click)="assign(act)">Seleccionar</button>
                             </div>
                             </div>
 
@@ -56,8 +56,13 @@
                 <ng-template #emptyState>
                     <div *ngIf="!vm.lastSearchedTag; else noResults" class="h-full flex flex-col justify-center items-center text-center px-6">
                         <p class="text-gray-600 text-sm leading-relaxed">
-                            Escanea el código QR o ingresa el número de TAG manualmente para buscar órdenes de trabajo.
+                            Escanea el código QR o ingresa el TAG para buscar órdenes de trabajo:.
                         </p>
+                      <ul class="flex flex-col justify-start items-start list-disc">
+                        <li>Recolección de acometida</li>
+                        <li>Reconexión pago</li>
+                        <li>No pago - filtro de video</li>
+                      </ul>
                     </div>
                     <ng-template #noResults>
                         <div class="h-full flex flex-col justify-center items-center text-center px-6">

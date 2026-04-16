@@ -196,7 +196,7 @@ export class Store extends ComponentStore<State> {
   readonly setSearchResults = this.updater((state, searchResults: GroupedActivities) => ({
     ...state,
     searchResults,
-    visibleItemsLimit: Object.keys(searchResults).reduce((acc, key) => ({ ...acc, [key]: 2 }), {})
+    visibleItemsLimit: Object.keys(searchResults).reduce((acc, key) => ({ ...acc, [key]: 5 }), {})
   }));
 
   readonly removeActivityFromResults = this.updater((state, activityId: number) => {
@@ -214,7 +214,7 @@ export class Store extends ComponentStore<State> {
     ...state,
     visibleItemsLimit: {
       ...state.visibleItemsLimit,
-      [group]: (state.visibleItemsLimit[group] || 2) + 2
+      [group]: (state.visibleItemsLimit[group] || 5) + 5
     }
   }));
   readonly setCurrentResourceId = this.updater((state, currentResourceId: string) => ({
@@ -230,9 +230,9 @@ export class Store extends ComponentStore<State> {
         this.ofsRestApiService.setUrl(urlOFSC);
         this.ofsRestApiService.setCredentials({user: ofscRestClientId, pass: ofscRestSecretId});
       }),
-      tap(message => console.log(message)),
+/*      tap(message => console.log(message)),*/
       tap((message) => {
-        if (message.user) this.setCurrentResourceId(message.user.ulogin);
+        if (message.resource) this.setCurrentResourceId(message.resource.external_id);
       }),
 /*      concatMap((message) => {
         if (message.activity) {
@@ -371,9 +371,12 @@ export class Store extends ComponentStore<State> {
 
   readonly selfAssign = this.effect<number>((activityId$) => activityId$.pipe(
     concatMap((activityId) => this.ofsRestApiService.moveActivity(activityId, this.get().currentResourceId!).pipe(
+      tap(response => console.log(response)),
+      // Usamos concatMap para esperar a que el usuario cierre el diálogo de éxito antes de salir
+      concatMap(() => this.dialog.success('Actividad autoasignada correctamente')),
       tap(() => {
         this.removeActivityFromResults(activityId);
-        this.dialog.success('Actividad autoasignada correctamente');
+        this.ofs.close(activityId); // Invocamos el cierre para volver a OFSC
       }),
       catchError((err) => {
         this.dialog.error('No se pudo autoasignar la actividad: ' + err.message);

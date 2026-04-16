@@ -26,6 +26,15 @@ export class DialogService {
     return dialogRef.afterClosed();
   }
 
+  confirmAssign(apptNumber: string): Observable<boolean> {
+    const dialogRef = this.dialog.open(ConfirmAssignDialogComponent, {
+      data: apptNumber,
+      width: '320px',
+      autoFocus: false
+    });
+    return dialogRef.afterClosed();
+  }
+
   confirm(message: string): Observable<void> {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       data: message,
@@ -102,4 +111,28 @@ export class SuccessDialogComponent {
 export class ConfirmDialogComponent {
   constructor(@Inject(MAT_DIALOG_DATA) public data: Error) {
   }
+}
+
+@Component({
+    selector: 'app-confirm-assign-dialog',
+    standalone: true,
+    imports: [MatButtonModule, MatDialogModule, CommonModule],
+    template: `
+    <div class="p-4">
+      <h2 mat-dialog-title class="text-lg! font-bold! text-cyan-900! mb-2! text-center">Confirmar autoasignación de orden</h2>
+      <mat-dialog-content class="text-center! pb-6!">
+        <p class="text-sm text-gray-700">
+          Se asignará la OS <b>{{data}}</b> a la ruta actual<br>
+          <!--<span class="font-bold text-base text-black">{{ data }}</span>?-->
+        </p>
+      </mat-dialog-content>
+      <mat-dialog-actions class="flex justify-between items-center gap-0">
+        <button class="text-gray-500 font-bold! tracking-wider border rounded-sm w-1/2 py-2" [mat-dialog-close]="false">Cancelar</button>
+        <button mat-flat-button color="primary" class="px-4! font-bold! tracking-wider bg-blue-500 border rounded-sm text-white w-1/2 py-2" [mat-dialog-close]="true">Continuar</button>
+      </mat-dialog-actions>
+    </div>
+  `
+})
+export class ConfirmAssignDialogComponent {
+  constructor(@Inject(MAT_DIALOG_DATA) public data: string) {}
 }

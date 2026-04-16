@@ -71,7 +71,7 @@
           },
           "defaultConfiguration": "development",
           "options": {
-            "allowedHosts": ["submit-scholars-limit-dive.trycloudflare.com"]
+            "allowedHosts": ["swim-guild-festival-dialogue.trycloudflare.com"]
           }
         },
         "extract-i18n": {

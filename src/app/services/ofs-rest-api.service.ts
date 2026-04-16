@@ -130,6 +130,9 @@ export class OfsRestApiService {
       setDate: {
         date: today
       },
+      setPositionInRoute: {
+        position: "notOrdered"
+      },
       setResource: {
         resourceId: targetResourceId
       }
